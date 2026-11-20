@@ -8,7 +8,28 @@ from models import Post, PostCreate, PostPublic, PostUpdate
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
+def posts_with_likes():
+    """SELECT posts.*, COUNT(likes.user_id)
+        FROM posts LEFT JOIN likes ON likes.post_id = posts.id
+        GROUP BY posts.id"""
+    return (
+          select(Post, func.count(col(Like.user_id)))
+          .join(Like, col(Like.post_id) == col(Post.id), isouter=True)
+          .group_by(col(Post.id))
+    )
 
+def to_post_with_likes(row) -> PostWithLikes:
+    post, likes_count = row        # cada fila es una tupla (Post, int)
+    return PostWithLikes.model_validate(post, update={"likes_count": likes_count})
+
+def get_post_with_likes_or_404(db: Session, post_id: int) -> PostWithLikes:
+    row = db.exec(posts_with_likes().where(Post.id == post_id)).first()
+    #   → si row es None: 404 "Post no encontrado"; si no: return to_post_with_likes(row)
+    if row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Post no encontrado")
+    return to_post_with_likes(row)
+
+    
 @router.get("", response_model=list[PostPublic])
 def read_posts(db: SessionDep, offset: int = 0, limit: Annotated[int, Query(le=100)] = 20):
     stmt = select(Post).order_by(col(Post.created_at).desc()).offset(offset).limit(limit)
