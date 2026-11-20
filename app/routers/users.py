@@ -14,3 +14,19 @@ def read_user(user_id: int, db: SessionDep):
 @router.get("/{user_id}/posts", response_model=list[PostPublic])
 def read_user_posts(user_id: int, db: SessionDep):
     return get_user_or_404(db, user_id).posts
+
+@router.get("/{user_id}/likes", response_model=list[PostPublic])
+def read_user_likes(
+    user_id: int, db: SessionDep, offset: int = 0, limit: Annotated[int, Query(le=100)] = 20
+):
+    """Los posts a los que este usuario le dio like (el más reciente primero)."""
+    get_user_or_404(db, user_id)
+    stmt = (
+        select(Post)
+        .join(Like, col(Like.post_id) == col(Post.id))
+        .where(Like.user_id == user_id)
+        .order_by(col(Like.created_at).desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    return db.exec(stmt).all()
