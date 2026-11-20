@@ -78,3 +78,13 @@ def like_post(post_id: int, db: SessionDep, current_user: CurrentUser):
         db.add(Like(user_id=current_user.id, post_id=post_id))
         db.commit()
     return get_post_with_likes_or_404(db, post_id)
+
+
+@router.delete("/{post_id}/like", response_model=PostWithLikes)
+def unlike_post(post_id: int, db: SessionDep, current_user: CurrentUser):
+    get_post_or_404(db, post_id)
+    like = db.get(Like, (current_user.id, post_id))
+    if like is not None:
+        db.delete(like)
+        db.commit()
+    return get_post_with_likes_or_404(db, post_id)
