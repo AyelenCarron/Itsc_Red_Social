@@ -29,7 +29,7 @@ def get_post_with_likes_or_404(db: Session, post_id: int) -> PostWithLikes:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Post no encontrado")
     return to_post_with_likes(row)
 
-    
+
 @router.get("", response_model=list[PostPublic])
 def read_posts(db: SessionDep, offset: int = 0, limit: Annotated[int, Query(le=100)] = 20):
     stmt = select(Post).order_by(col(Post.created_at).desc()).offset(offset).limit(limit)
@@ -68,3 +68,13 @@ def delete_post(post_id: int, db: SessionDep, current_user: CurrentUser):
     require(post.author_id == current_user.id or is_admin(current_user))
     db.delete(post)
     db.commit()
+
+
+@router.put("/{post_id}/like", response_model=PostWithLikes)
+def like_post(post_id: int, db: SessionDep, current_user: CurrentUser):
+    get_post_or_404(db, post_id)
+    like = db.get(Like, (current_user.id, post_id))
+    if like is None:
+        db.add(Like(user_id=current_user.id, post_id=post_id))
+        db.commit()
+    return get_post_with_likes_or_404(db, post_id)
