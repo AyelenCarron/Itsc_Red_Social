@@ -23,9 +23,9 @@ def to_profile(db: Session, user: User) -> UserProfile:
     )
 
 
-@router.get("/{user_id}", response_model=UserPublic)
+@router.get("/{user_id}", response_model=UserProfile)
 def read_user(user_id: int, db: SessionDep):
-    return get_user_or_404(db, user_id)
+    return to_profile(db, get_user_or_404(db, user_id))
 
 
 @router.get("/{user_id}/posts", response_model=list[PostPublic])

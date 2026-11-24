@@ -1,10 +1,11 @@
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlmodel import col, select
+from sqlalchemy import func
+from sqlmodel import Session, col, select
 
 from dependencies import CurrentUser, SessionDep, get_post_or_404, is_admin, require
-from models import Post, PostCreate, PostPublic, PostUpdate
+from models import Like, Post, PostCreate, PostPublic, PostUpdate, PostWithLikes, User, UserPublic
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
