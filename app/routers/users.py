@@ -9,6 +9,19 @@ from models import Follow, Like, Post, PostPublic, User, UserProfile, UserPublic
 
 router = APIRouter(prefix="/users", tags=["users"])
 
+# ═══════════════ Perfil con contadores ═══════════════
+def to_profile(db: Session, user: User) -> UserProfile:
+    # Dos conteos en direcciones OPUESTAS sobre la misma tabla:
+    followers = db.exec(
+        select(func.count()).select_from(Follow).where(Follow.followed_id == user.id)
+    ).one()  # filas donde user es el SEGUIDO
+    following = db.exec(
+        select(func.count()).select_from(Follow).where(Follow.follower_id == user.id)
+    ).one()  # filas donde user es el SEGUIDOR
+    return UserProfile.model_validate(
+        user, update={"followers_count": followers, "following_count": following}
+    )
+
 
 @router.get("/{user_id}", response_model=UserPublic)
 def read_user(user_id: int, db: SessionDep):
