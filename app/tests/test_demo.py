@@ -63,3 +63,16 @@ def test_401_without_token_and_403_for_non_author(client):
     assert client.patch(f"/posts/{post_id}", json={"title": "ok"}, headers=alice).status_code == 200
     assert client.delete(f"/posts/{post_id}", headers=alice).status_code == 204
     assert client.get(f"/posts/{post_id}").status_code == 404
+
+
+def test_deleting_a_post_deletes_its_likes(client, engine):
+    from models import Like
+    alice = register_and_login(client, "alice")
+    bob = register_and_login(client, "bob")
+    post_id = new_post(client, alice)
+    client.put(f"/posts/{post_id}/like", headers = bob).status_code == 200
+    with Session(engine) as db:
+        assert len(db.exec(select(Like)).all()) == 1
+    assert client.delete(f"/posts/{post_id}", headers = alice).status_code == 204
+    with Session(engine) as db:
+            assert db.exec(select(Like)).all() == []
