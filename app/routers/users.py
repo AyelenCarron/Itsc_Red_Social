@@ -1,7 +1,11 @@
-from fastapi import APIRouter
+from typing import Annotated
 
-from dependencies import SessionDep, get_user_or_404
-from models import PostPublic, UserPublic
+from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import func
+from sqlmodel import Session, col, select
+
+from dependencies import CurrentUser, SessionDep, get_user_or_404
+from models import Follow, Like, Post, PostPublic, User, UserProfile, UserPublic
 
 router = APIRouter(prefix="/users", tags=["users"])
 
